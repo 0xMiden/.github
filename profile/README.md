@@ -11,7 +11,7 @@
 [link-website]: https://miden.xyz
 
 # Miden
-Miden is the edge blockchain that grants applications the power to scale with public and private transactions. Miden is how blockchains were meant to be. It aims at builders who want to replace financial legacy system.
+Miden is the edge blockchain that grants applications the power to scale with public and private transactions. Miden is how blockchains were meant to be. It aims at builders who want to replace legacy financial system.
 
 ## Project structure
 This repository stores all the code for Miden. Everything is open source. 
@@ -19,7 +19,7 @@ This repository stores all the code for Miden. Everything is open source.
 | Repository              | Description |
 | ----------------------- | ----------- |
 | [Miden Base](https://github.com/0xMiden/miden-base)    | Core components of the Miden blockchain. |
-| [Miden Compiler](https://github.com/0xMiden/compiler)  | Compiler from WebAssembly to Miden Assembly. |
+| [Miden Compiler](https://github.com/0xMiden/compiler)  | Compiler from Web Assembly to Miden Assembly. |
 | [Miden Client](https://github.com/0xMiden/miden-client)| A reference Miden Client to be used by users. |
 | [Miden Node](https://github.com/0xMiden/miden-node)    | Miden Node to be used by the Miden operators. |
 | [Miden VM](https://github.com/0xMiden/miden-vm)        | STARK-based virtual machine for the Miden blockchain. |
