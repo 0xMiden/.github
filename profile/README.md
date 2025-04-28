@@ -1,4 +1,4 @@
-![](https://github.com/user-attachments/assets/5581bdde-15a1-4b08-b5f2-88e73bf9dcbd)
+![](https://github.com/user-attachments/assets/02ed7cf8-410e-42e1-9072-a02a5dbe0200)
 
 [![Chat on Telegram][ico-telegram]][link-telegram] [![Website][ico-website]][link-website] [![Chat on Twitter][ico-twitter]][link-twitter]
 
