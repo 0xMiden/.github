@@ -1,4 +1,4 @@
-<img src="https://github.com/user-attachments/assets/cf6eac98-5977-4bc5-b4ba-e4eb0c72672c" width="300">
+![](https://github.com/user-attachments/assets/cf6eac98-5977-4bc5-b4ba-e4eb0c72672c)
 
 [![Chat on Telegram][ico-telegram]][link-telegram] [![Website][ico-website]][link-website] [![Chat on Twitter][ico-twitter]][link-twitter]
 
@@ -11,24 +11,24 @@
 [link-website]: https://miden.xyz
 
 # Miden
-Miden is the edge blockchain that grants applications the power to scale with public and private transactions. It aims at builders who want to create an ecosystem for private asset management and OTC-trading.
+Miden is the edge blockchain that grants applications the power to scale with public and private transactions. Miden is how blockchains were meant to be. It aims at builders who want to replace financial legacy system.
 
 ## Project structure
 This repository stores all the code for Miden. Everything is open source. 
 
 | Repository              | Description |
 | ----------------------- | ----------- |
-| [Miden Base](https://github.com/0xMiden/miden-base)    | Core components of the Miden chain. |
-| [Miden Compiler](https://github.com/0xMiden/compiler)  | Compiler from MidenIR to Miden Assembly. |
+| [Miden Base](https://github.com/0xMiden/miden-base)    | Core components of the Miden blockchain. |
+| [Miden Compiler](https://github.com/0xMiden/compiler)  | Compiler from WebAssembly to Miden Assembly. |
 | [Miden Client](https://github.com/0xMiden/miden-client)| A reference Miden Client to be used by users. |
 | [Miden Node](https://github.com/0xMiden/miden-node)    | Miden Node to be used by the Miden operators. |
-| [Miden VM](https://github.com/0xMiden/miden-vm)        | STARK-based virtual machine for the Miden chain. |
-| [Miden Crypto](https://github.com/0xMiden/crypto)      | Cryptographic primitives used in the Miden chain. |
+| [Miden VM](https://github.com/0xMiden/miden-vm)        | STARK-based virtual machine for the Miden blockchain. |
+| [Miden Crypto](https://github.com/0xMiden/crypto)      | Cryptographic primitives used in the Miden blockchain. |
 
 ## Status
 The [public testnet](https://testnet.midenscan.com/) is up and running. You can interact with the Miden node using the Miden client. The easiest way to try Miden is by installing the [Miden Rust client](https://0xpolygonmiden.github.io/miden-docs/imported/miden-client/src/get-started/prerequisites.html). If you feel like exploring, try [our tutorials](https://0xpolygonmiden.github.io/miden-docs/imported/miden-tutorials/src/index.html). As soon as there is the Miden Rust compiler, builders can start writing their own contracts in Rust.
     
-If you want to use Miden - please contact [us](dominik@miden.team).
+If you want to use Miden - please contact [us](hello@miden.team).
 
 ## Key features
 
