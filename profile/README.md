@@ -26,7 +26,7 @@ This repository stores all the code for Miden. Everything is open source.
 | [Miden Crypto](https://github.com/0xMiden/crypto)      | Cryptographic primitives used in the Miden blockchain. |
 
 ## Status
-The [public testnet](https://testnet.midenscan.com/) is up and running. You can interact with the Miden node using the Miden client. The easiest way to try Miden is by installing the [Miden Rust client](https://0xpolygonmiden.github.io/miden-docs/imported/miden-client/src/get-started/prerequisites.html). If you feel like exploring, try [our tutorials](https://0xpolygonmiden.github.io/miden-docs/imported/miden-tutorials/src/index.html). As soon as there is the Miden Rust compiler, builders can start writing their own contracts in Rust.
+The [public testnet](https://testnet.midenscan.com/) is up and running. You can interact with the Miden node using the Miden client. The easiest way to try Miden is by installing the [Miden Rust client](https://0xmiden.github.io/miden-docs/imported/miden-client/src/get-started/prerequisites.html). If you feel like exploring, try [our tutorials](https://0xmiden.github.io/miden-docs/imported/miden-tutorials/src/index.html). As soon as there is the Miden Rust compiler, builders can start writing their own contracts in Rust.
     
 If you want to use Miden - please contact [us](hello@miden.team).
 
