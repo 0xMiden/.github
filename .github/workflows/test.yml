@@ -1,0 +1,33 @@
+# Runs testing related jobs.
+
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      target_branch:
+        description: 'The branch to deploy a book from'
+        required: false
+        type: string
+        default: 'next'
+
+# Limits workflow concurrency to only the latest commit in the PR.
+concurrency:
+  group: "${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@main
+      - name: Rustup
+        run: rustup update --no-self-update
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+      - uses: taiki-e/install-action@nextest 
+      - name: Run tests
+        run: make test

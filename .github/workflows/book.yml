@@ -1,0 +1,90 @@
+# Performs checks, builds and deploys the documentation mdbook.
+#
+# Flow is based on the official github and mdbook documentation:
+#
+#   https://github.com/actions/starter-workflows/blob/main/pages/mdbook.yml
+#   https://github.com/rust-lang/mdBook/wiki/Automated-Deployment%3A-GitHub-Actions
+
+name: book
+
+# Enable GH pages Settings -> Pages -> Build and deployment -> Source Github Actions
+# Documentation should be built and tested on every pull-request, and additionally deployed on push onto the branch.
+
+on:
+  workflow_call:
+    inputs:
+      directory:
+        description: 'The directory with mdBook files'
+        required: false
+        type: string
+        default: 'docs/'
+
+      artifact_path:
+        description: 'The relative to the directory path to a built mdBook'
+        required: false
+        type: string
+        default: 'book/html'
+
+      target_branch:
+        description: 'The branch to deploy a book from'
+        required: false
+        type: string
+        default: 'next'
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Always build and test the mdbook documentation whenever the docs folder is changed.
+  #
+  # The documentation is uploaded as a github artifact IFF it is required for deployment i.e. on push into the branch.
+  build:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      # Installation from source takes a fair while, so we install the binaries directly instead.
+      - name: Install mdbook and plugins
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook, mdbook-linkcheck, mdbook-alerts, mdbook-katex
+
+      - name: Build book
+        run: mdbook build ${{ github.event.inputs.directory }}
+
+      # Only Upload documentation if we want to deploy (i.e. push to the branch).
+      - name: Setup Pages
+        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload book artifact
+        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # We specify multiple [output] sections in our book.toml which causes mdbook to create separate folders for each. This moves the generated `html` into its own `html` subdirectory.
+          path: ./docs/${{ github.event.inputs.artifact_path }}
+
+  # Deployment job only runs on push to the target_branch.
+  deploy:
+    name: Deploy documentation
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
