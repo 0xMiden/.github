@@ -76,5 +76,5 @@ check: ## Check all targets and features for errors without code generation
 # --- building ------------------------------------------------------------------------------------
 
 .PHONY: build
-build: ## Builds all crates and re-builds ptotobuf bindings for proto crates
+build: ## Builds all crates and re-builds protobuf bindings for proto crates
 	cargo build --locked --workspace
