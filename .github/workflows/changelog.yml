@@ -23,7 +23,7 @@ jobs:
       - name: Checkout flows repo
         uses: actions/checkout@v4
         with:
-          repository: atsaero/.github
+          repository: 0xMiden/.github
           ref: feature-reusable-flows
       - name: Check for changes in changelog
         env:
