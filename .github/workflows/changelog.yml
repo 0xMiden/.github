@@ -17,12 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Check for changes in changelog
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           NO_CHANGELOG_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'no changelog') }}
-        run: ./scripts/check-changelog.sh "${{ inputs.changelog_path }}"
-        shell: bash
+        run: curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/atsaero/.github/refs/heads/feature-reusable-flows/scripts/check-changelog.sh | bash "${{ inputs.changelog_path }}"

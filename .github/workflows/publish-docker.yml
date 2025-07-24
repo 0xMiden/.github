@@ -49,7 +49,7 @@ jobs:
     name: Publish ${{ inputs.component }} ${{ inputs.version }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0

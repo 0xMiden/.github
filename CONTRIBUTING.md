@@ -16,6 +16,9 @@ We want to make contributing to this project as easy and transparent as possible
 ```sh
 cargo install taplo-cli --locked
 cargo install mdbook
+cargo install mdbook-linkcheck
+cargo install mdbook-katex
+cargo install mdbook-alerts
 cargo install cargo-nextest --locked
 cargo install typos-cli
 ```
