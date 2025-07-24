@@ -26,3 +26,17 @@ jobs:
       - uses: taiki-e/install-action@nextest 
       - name: Run tests
         run: make test
+  doc-test:
+    name: Documentation tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@main
+      - name: Rustup
+        run: rustup update --no-self-update
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+      - uses: taiki-e/install-action@nextest 
+      - name: Run tests
+        run: make doc-test
