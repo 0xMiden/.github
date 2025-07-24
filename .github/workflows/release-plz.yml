@@ -19,12 +19,10 @@ on:
       gh_token:
         description: 'Github token'
         required: true
-        type: string
 
       cargo_registry_token:
         description: 'Cargo registry token'
         required: true
-        type: string
 
 jobs:
   release-plz-release:
