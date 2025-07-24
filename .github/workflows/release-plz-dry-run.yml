@@ -23,7 +23,7 @@ jobs:
   release-plz-dry-run-release:
     name: Release-plz dry-run
     runs-on: ubuntu-latest
-    # if: ${{ github.repository_owner == '0xMiden' }}  TODO(Maks) uncomment
+    if: ${{ github.repository_owner == '0xMiden' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@main

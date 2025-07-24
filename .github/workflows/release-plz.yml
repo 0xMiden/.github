@@ -28,7 +28,7 @@ jobs:
   release-plz-release:
     name: Release-plz release
     runs-on: ubuntu-latest
-    # if: ${{ github.repository_owner == '0xMiden' }} TODO(Maks) uncomment
+    if: ${{ github.repository_owner == '0xMiden' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
       # Ensure the release tag refers to the latest commit on target ref.
       # Compare the commit SHA that triggered the workflow with the HEAD of the branch we just
       # checked out (main).
-      - name: Verify release was triggered from main HEAD
+      - name: Verify release was triggered from the target ref HEAD
         run: |
           tag_sha="${{ github.sha }}"
           main_sha="$(git rev-parse HEAD)"
@@ -47,10 +47,10 @@ jobs:
           echo "Current main HEAD is: $main_sha"
 
           if [ "$tag_sha" != "$main_sha" ]; then
-            echo "::error::The release tag was not created from the latest commit on main. Aborting."
+            echo "::error::The release tag was not created from the latest commit on the target ref. Aborting."
             exit 1
           fi
-          echo "Release tag matches main HEAD — continuing."
+          echo "Release tag matches the target ref HEAD — continuing."
       - name: Update Rust toolchain
         run: |
           rustup update --no-self-update
