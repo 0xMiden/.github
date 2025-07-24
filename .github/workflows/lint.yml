@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
       - uses: taiki-e/install-action@v2
         with:
           tool: typos
@@ -31,7 +30,6 @@ jobs:
     name: rustfmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
       - name: Rustup
         run: |
           rustup update --no-self-update nightly
@@ -46,7 +44,6 @@ jobs:
     name: clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
       - name: Rustup
         run: |
           rustup update --no-self-update
@@ -61,7 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
       - uses: taiki-e/install-action@v2
         with:
           tool: taplo-cli
@@ -71,7 +67,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-workspace-lints
@@ -82,7 +77,6 @@ jobs:
     name: doc
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
       - name: Rustup
         run: rustup update --no-self-update
       - uses: Swatinem/rust-cache@v2
@@ -95,6 +89,5 @@ jobs:
     name: check for unused dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@main
       - name: machete
         uses: bnjbvr/cargo-machete@main
