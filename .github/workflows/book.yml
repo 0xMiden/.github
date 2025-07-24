@@ -45,20 +45,20 @@ jobs:
           tool: mdbook, mdbook-linkcheck, mdbook-alerts, mdbook-katex
 
       - name: Build book
-        run: mdbook build ${{ github.event.inputs.directory }}
+        run: mdbook build ${{ inputs.directory }}
 
       # Only Upload documentation if we want to deploy (i.e. push to the branch).
       - name: Setup Pages
-        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
         id: pages
         uses: actions/configure-pages@v5
 
       - name: Upload book artifact
-        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+        if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
         uses: actions/upload-pages-artifact@v3
         with:
           # We specify multiple [output] sections in our book.toml which causes mdbook to create separate folders for each. This moves the generated `html` into its own `html` subdirectory.
-          path: ${{ github.event.inputs.directory }}/${{ github.event.inputs.artifact_path }}
+          path: ${{ inputs.directory }}/${{ inputs.artifact_path }}
 
   # Deployment job only runs on push to the target_branch.
   deploy:
@@ -68,7 +68,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+    if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

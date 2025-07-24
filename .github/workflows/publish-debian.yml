@@ -46,9 +46,9 @@ jobs:
         uses: ./.github/actions/debian
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          gitref: ${{ github.event.inputs.version }}
-          crate_dir: ${{ github.event.inputs.crate_dir }}
-          service: ${{ github.event.inputs.service }}
-          package: ${{ github.event.inputs.package }}
-          crate: ${{ github.event.inputs.crate }}
+          gitref: ${{ inputs.version }}
+          crate_dir: ${{ inputs.crate_dir }}
+          service: ${{ inputs.service }}
+          package: ${{ inputs.package }}
+          crate: ${{ inputs.crate }}
           arch: ${{ matrix.arch }}

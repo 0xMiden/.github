@@ -33,7 +33,7 @@ jobs:
           rustup +nightly component add rustfmt
       - uses: Swatinem/rust-cache@v2
         with:
-          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
       - name: Fmt
         run: make format-check
 
@@ -48,7 +48,7 @@ jobs:
           rustup component add clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
       - name: Clippy
         run: make clippy
 
@@ -82,7 +82,7 @@ jobs:
         run: rustup update --no-self-update
       - uses: Swatinem/rust-cache@v2
         with:
-          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.inputs.target_branch) }}
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
       - name: Build docs
         run: make doc
 

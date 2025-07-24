@@ -20,7 +20,7 @@ on:
         type: string
       
 env:
-  version: ${{ github.event.inputs.version || github.ref_name }}
+  version: ${{ inputs.version || github.ref_name }}
   registry: ghcr.io
 
 permissions:
@@ -33,7 +33,7 @@ jobs:
   publish:
     runs-on:
       labels: "ubuntu-latest"
-    name: Publish ${{ github.event.inputs.component }} ${{ github.event.inputs.version }}
+    name: Publish ${{ inputs.component }} ${{ inputs.version }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@main
@@ -66,7 +66,7 @@ jobs:
         with:
           push: true
           labels: ${{ steps.meta.outputs.labels }}
-          file: ${{ github.event.inputs.dockerfile_path }}
-          tags: ${{ env.registry }}/0xmiden/miden-${{ github.event.inputs.component }}:${{ env.version }}
-          cache-from: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ github.event.inputs.component }}
-          cache-to: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ github.event.inputs.component }},mode=max
+          file: ${{ inputs.dockerfile_path }}
+          tags: ${{ env.registry }}/0xmiden/miden-${{ inputs.component }}:${{ env.version }}
+          cache-from: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ inputs.component }}
+          cache-to: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ inputs.component }},mode=max
