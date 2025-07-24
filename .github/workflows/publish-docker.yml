@@ -14,20 +14,33 @@ on:
         type: string
         default: 'Dockerfile'
 
+      registry:
+        description: "Docker registry"
+        required: false
+        type: string
+        default: 'ghcr.io'
+
       version:
         description: "Version to release (E.G. v0.10.0-rc.1, v0.10.0). Corresponding git tag must already exist."
         required: true
         type: string
-      
-env:
-  version: ${{ inputs.version || github.ref_name }}
-  registry: ghcr.io
+    
+    secrets:
+      gh_token:
+        description: 'Github token'
+        required: true
 
-permissions:
-  id-token: write
-  contents: write
-  packages: write
-  attestations: write
+      aws_region:
+        description: 'AWS region'
+        required: true
+
+      aws_role:
+        description: 'AWS role'
+        required: true
+
+      aws_cache_bucket:
+        description: 'AWS cache bucket'
+        required: true
 
 jobs:
   publish:
@@ -38,21 +51,21 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@main
         with:
-          ref: ${{ env.version }}
+          ref: ${{ inputs.version }}
           fetch-depth: 0
 
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
-          registry: ${{ env.registry }}
+          registry: ${{ inputs.registry }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.gh_token }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: ${{ secrets.aws_region }}
+          role-to-assume: ${{ secrets.aws_role }}
           role-session-name: GithubActionsSession
 
       - name: Set up Docker Buildx
@@ -67,6 +80,6 @@ jobs:
           push: true
           labels: ${{ steps.meta.outputs.labels }}
           file: ${{ inputs.dockerfile_path }}
-          tags: ${{ env.registry }}/0xmiden/miden-${{ inputs.component }}:${{ env.version }}
-          cache-from: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ inputs.component }}
-          cache-to: type=s3,region=${{ secrets.AWS_REGION }},bucket=${{ secrets.AWS_CACHE_BUCKET }},name=miden-${{ inputs.component }},mode=max
+          tags: ${{ inputs.registry }}/0xmiden/miden-${{ inputs.component }}:${{ inputs.version }}
+          cache-from: type=s3,region=${{ secrets.aws_region }},bucket=${{ secrets.aws_cache_bucket }},name=miden-${{ inputs.component }}
+          cache-to: type=s3,region=${{ secrets.aws_region }},bucket=${{ secrets.aws_cache_bucket }},name=miden-${{ inputs.component }},mode=max

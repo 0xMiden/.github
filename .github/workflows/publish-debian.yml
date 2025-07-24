@@ -24,10 +24,6 @@ on:
         required: true
         type: string
 
-permissions:
-  id-token: write
-  contents: write
-
 jobs:
   publish:
     name: Publish ${{ matrix.arch }} Debian
