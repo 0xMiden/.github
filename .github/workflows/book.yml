@@ -17,7 +17,7 @@ on:
         description: 'The directory with mdBook files'
         required: false
         type: string
-        default: 'docs/'
+        default: 'docs'
 
       artifact_path:
         description: 'The relative to the directory path to a built mdBook'
@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           # We specify multiple [output] sections in our book.toml which causes mdbook to create separate folders for each. This moves the generated `html` into its own `html` subdirectory.
-          path: ./docs/${{ github.event.inputs.artifact_path }}
+          path: ${{ github.event.inputs.directory }}/${{ github.event.inputs.artifact_path }}
 
   # Deployment job only runs on push to the target_branch.
   deploy:

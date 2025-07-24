@@ -1,4 +1,4 @@
-# Contributing to Miden Node
+# Contributing to Miden
 
 #### First off, thanks for taking the time to contribute!
 
