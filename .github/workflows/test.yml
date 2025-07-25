@@ -6,7 +6,7 @@ on:
   workflow_call:
     inputs:
       target_branch:
-        description: 'The branch to cache from'
+        description: 'The branch to cache Rust compilation artifacts from'
         required: false
         type: string
         default: 'next'
