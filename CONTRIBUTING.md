@@ -4,10 +4,10 @@
 
 We want to make contributing to this project as easy and transparent as possible, whether it's:
 
-- Reporting a [bug](issues/new?assignees=&labels=bug&projects=&template=1-bugreport.yml)
-- Taking part in [discussions](discussions)
-- Submitting a [fix](pulls)
-- Proposing new [features](issues/new?assignees=&labels=enhancement&projects=&template=2-feature-request.yml)
+- Reporting a bug
+- Taking part in discussions
+- Submitting a fix
+- Proposing new features
 
 &nbsp;
 
@@ -136,3 +136,28 @@ To make sure all commits adhere to our programming standards please follow the c
 ## Any contributions you make will be under the MIT Software License
 
 In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+
+&nbsp;
+
+## Internal Contributing Guidelines
+
+For core team members and frequent contributors, we follow a few additional guidelines to streamline our internal development process:
+
+### 1. Keep Pull Requests in Draft State Until Ready
+
+To avoid unnecessary notifications and ensure reviewers' time is respected:
+
+* **Start all new Pull Requests (PRs) as a `Draft` PR.** This signals that the work is still in progress, potentially incomplete, and not yet ready for a full review.
+* **Only mark a PR as "Ready for Review"** when:
+    * All changes are complete and tested.
+    * All automated CI checks have passed.
+    * You have performed a self-review of your changes.
+    * The PR description is updated with all necessary context for reviewers.
+* This approach helps reviewers focus their attention on PRs that are truly ready for their feedback.
+
+### 2. Re-request Reviewers Explicitly
+
+When you've addressed review comments or made significant updates to a PR that was previously reviewed:
+
+* **Explicitly re-request a review** from the relevant reviewers. You can do this via the sidebar in the GitHub PR interface.
+* Add a comment summarizing the changes made or asking specific questions related to the updates. This helps reviewers quickly understand what needs their attention.
