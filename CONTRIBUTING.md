@@ -139,11 +139,11 @@ In short, when you submit code changes, your submissions are understood to be un
 
 &nbsp;
 
-## Internal Contributing Guidelines
+## Internal contributing guidelines
 
 For core team members and frequent contributors, we follow a few additional guidelines to streamline our internal development process:
 
-### 1. Keep Pull Requests in Draft State Until Ready
+### 1. Keep Pull Requests in Draft until ready
 
 To avoid unnecessary notifications and ensure reviewers' time is respected:
 
@@ -155,7 +155,7 @@ To avoid unnecessary notifications and ensure reviewers' time is respected:
     * The PR description is updated with all necessary context for reviewers.
 * This approach helps reviewers focus their attention on PRs that are truly ready for their feedback.
 
-### 2. Re-request Reviewers Explicitly
+### 2. Re-request reviewers explicitly
 
 When you've addressed review comments or made significant updates to a PR that was previously reviewed:
 
