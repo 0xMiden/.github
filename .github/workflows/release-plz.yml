@@ -8,12 +8,6 @@ on:
         required: false
         type: string
         default: 'configs/.release-plz.toml'
-      
-      target_ref:
-        description: 'The git ref to release from'
-        required: false
-        type: string
-        default: 'main'
 
     secrets:
       gh_token:
@@ -34,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.target_ref }}
+          ref: main
       # Ensure the release tag refers to the latest commit on target ref.
       # Compare the commit SHA that triggered the workflow with the HEAD of the branch we just
       # checked out (main).
