@@ -9,19 +9,7 @@ We want to make contributing to this project as easy and transparent as possible
 - Submitting a fix
 - Proposing new features
 
-&nbsp;
 
-## Prerequisites
-
-```sh
-cargo install taplo-cli --locked
-cargo install mdbook
-cargo install mdbook-linkcheck
-cargo install mdbook-katex
-cargo install mdbook-alerts
-cargo install cargo-nextest --locked
-cargo install typos-cli
-```
 
 ## Flow
 
@@ -92,7 +80,7 @@ We are using [Github Flow](https://docs.github.com/en/get-started/quickstart/git
   make lint
   ```
 
-You can find more information about the `make` commands in the [Makefile](Makefile)
+You can find more information about the `make` commands in the repo-specific `Makefile` (check also `make help`).
 
 ### Testing
 
@@ -133,12 +121,6 @@ To make sure all commits adhere to our programming standards please follow the c
 
 &nbsp;
 
-## Any contributions you make will be under the MIT Software License
-
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
-
-&nbsp;
-
 ## Internal contributing guidelines
 
 For core team members and frequent contributors, we follow a few additional guidelines to streamline our internal development process:
@@ -161,3 +143,9 @@ When you've addressed review comments or made significant updates to a PR that w
 
 * **Explicitly re-request a review** from the relevant reviewers. You can do this via the sidebar in the GitHub PR interface.
 * Add a comment summarizing the changes made or asking specific questions related to the updates. This helps reviewers quickly understand what needs their attention.
+
+&nbsp;
+
+## Any contributions you make will be under the MIT Software License
+
+In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
