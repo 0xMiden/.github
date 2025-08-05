@@ -1,0 +1,42 @@
+# Runs testing related jobs.
+
+name: test
+
+on:
+  workflow_call:
+    inputs:
+      target_branch:
+        description: 'The branch to cache Rust compilation artifacts from'
+        required: false
+        type: string
+        default: 'next'
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rustup
+        run: rustup update --no-self-update
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
+      - uses: taiki-e/install-action@nextest 
+      - name: Run tests
+        run: make test
+
+  doc-test:
+    name: Documentation tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rustup
+        run: rustup update --no-self-update
+      - uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', inputs.target_branch) }}
+      - name: Run doc tests
+        run: make doc-test
