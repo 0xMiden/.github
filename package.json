@@ -1,0 +1,23 @@
+{
+  "name": "game-of-towers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.5.0",
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@types/node": "^20.11.0",
+    "phaser": "^3.80.1",
+    "svelte": "^4.2.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.8",
+    "vitest": "^1.2.1",
+    "@sveltejs/adapter-auto": "^3.1.0"
+  }
+}
