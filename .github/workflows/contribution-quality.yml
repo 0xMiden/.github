@@ -24,9 +24,6 @@ on:
 
 jobs:
   gate:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     env:
       DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
@@ -37,7 +34,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // pull_request_target has the same payload shape as pull_request
             const isPREvent = !!context.payload.pull_request;
             const fromDispatch = context.payload?.inputs?.pr_number || process.env.DISPATCH_PR_NUMBER || '';
             const prNumber = isPREvent ? String(context.payload.pull_request.number) : String(fromDispatch || '');
@@ -46,7 +42,6 @@ jobs:
               return;
             }
             const forceAll = (context.payload?.inputs?.force_all || process.env.DISPATCH_FORCE_ALL || 'false').toLowerCase();
-            core.setOutput('is_pr_event', String(isPREvent));
             core.setOutput('pr_number', prNumber);
             core.setOutput('force_all', forceAll);
 
@@ -63,6 +58,7 @@ jobs:
             });
             core.setOutput('author_login', pr.user?.login || '');
             core.setOutput('draft', pr.draft ? 'true' : 'false');
+            core.setOutput('title', (pr.title || '').replace(/\r/g, ''));
             core.setOutput('body', (pr.body || '').replace(/\r/g, ''));
             core.setOutput('number', String(pr.number));
 
@@ -110,11 +106,14 @@ jobs:
         uses: actions/github-script@v7
         env:
           PRNUM: ${{ steps.pr.outputs.number }}
+          TITLE: ${{ steps.pr.outputs.title }}
           BODY: ${{ steps.pr.outputs.body }}
         with:
           script: |
             const prNumber = parseInt(process.env.PRNUM, 10);
+            const title = process.env.TITLE || '';
             const body = process.env.BODY || '';
+            const summary = [title, body].filter(Boolean).join('\n');
 
             const DOC_ONLY_MAX_LINES = 20;
             const CODE_ONLY_MAX_LINES = 8;
@@ -142,13 +141,22 @@ jobs:
             const onlyCode = changedFiles > 0 && files.every(f => CODE.has(ext(f.filename)));
             const touchesTests = files.some(f => TEST_HINTS.some(rx => rx.test(f.filename)));
 
+            const sameRepoSlug = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
             const issueNums = new Set();
-            for (const m of (body.match(/(?:fixe?s?|close?s?|resolve?s?)\s*#(\d+)/ig) || [])) {
-              const mm = m.match(/#(\d+)/);
-              if (mm) issueNums.add(mm[1]);
+            const addIssueNumber = (repoSlug, issueNumber) => {
+              if (!issueNumber) return;
+              if (repoSlug && repoSlug.toLowerCase() !== sameRepoSlug) return;
+              issueNums.add(issueNumber);
+            };
+
+            for (const match of summary.matchAll(/https:\/\/github\.com\/([^/\s]+)\/([^/\s]+)\/issues\/(\d+)/ig)) {
+              addIssueNumber(`${match[1]}/${match[2]}`, match[3]);
             }
-            for (const m of (body.match(/#(\d+)/g) || [])) {
-              issueNums.add(m.replace('#', ''));
+            for (const match of summary.matchAll(/\b([A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+)#(\d+)\b/g)) {
+              addIssueNumber(match[1], match[2]);
+            }
+            for (const match of summary.matchAll(/(^|[^\w/])#(\d+)\b/gm)) {
+              addIssueNumber(sameRepoSlug, match[2]);
             }
 
             let hasLinkedIssue = false;
@@ -180,8 +188,8 @@ jobs:
               }
             }
 
-            const hasRationale = /(^|\n)#{0,3}\s*(rationale|why)\b/i.test(body) || /\bbecause\b/i.test(body);
-            const hasTestPlan = /(^|\n)#{0,3}\s*(test\s*plan|how\s*i\s*tested)\b/i.test(body);
+            const hasRationale = /(^|\n)#{0,3}\s*(rationale|why)\b/i.test(summary) || /\bbecause\b/i.test(summary);
+            const hasTestPlan = /(^|\n)#{0,3}\s*(test\s*plan|how\s*i\s*tested)\b/i.test(summary);
 
             const trivialDoc = onlyDocs && (adds + dels) <= DOC_ONLY_MAX_LINES && changedFiles <= 2;
             const trivialCode = onlyCode && !touchesTests && (adds + dels) <= CODE_ONLY_MAX_LINES && changedFiles <= 1;
@@ -201,24 +209,41 @@ jobs:
             core.setOutput('linked', linkedNumber ? String(linkedNumber) : '');
             core.setOutput('pr_number', String(prNumber));
 
-      - name: Apply label and comment
-        if: steps.gate.outputs.skip != 'true' && (steps.eval.outputs.hasFindings == 'true' || steps.eval.outputs.recommendations != '[]')
+      - name: Sync label and comment
+        if: always() && steps.ctx.outputs.pr_number != ''
         uses: actions/github-script@v7
         env:
+          SKIP: ${{ steps.gate.outputs.skip }}
           FINDINGS: ${{ steps.eval.outputs.findings }}
           RECOMMENDATIONS: ${{ steps.eval.outputs.recommendations }}
           LINK: ${{ steps.eval.outputs.linked }}
-          PRNUM: ${{ steps.eval.outputs.pr_number }}
+          PRNUM: ${{ steps.ctx.outputs.pr_number }}
           HAS_FINDINGS: ${{ steps.eval.outputs.hasFindings }}
         with:
           script: |
             const issue_number = parseInt(process.env.PRNUM, 10);
+            const skip = process.env.SKIP === 'true';
             const findings = JSON.parse(process.env.FINDINGS || "[]");
             const recommendations = JSON.parse(process.env.RECOMMENDATIONS || "[]");
             const linked = process.env.LINK;
             const hasFindings = process.env.HAS_FINDINGS === 'true';
+            const shouldComment = !skip && (findings.length > 0 || recommendations.length > 0);
+            const marker = '<!-- contribution-quality-comment -->';
+            const legacyHeader = 'Automated check (CONTRIBUTING.md)';
 
-            // Only apply label if there are actual findings (not just recommendations)
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              per_page: 100
+            });
+            const existingComment = comments
+              .filter((comment) => {
+                const body = comment.body || '';
+                return comment.user?.type === 'Bot' && (body.includes(marker) || body.startsWith(legacyHeader));
+              })
+              .sort((left, right) => Date.parse(right.updated_at) - Date.parse(left.updated_at))[0];
+
             if (hasFindings) {
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
@@ -226,6 +251,30 @@ jobs:
                 issue_number,
                 labels: ['quality-concern']
               });
+            } else {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number,
+                  name: 'quality-concern'
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  throw error;
+                }
+              }
+            }
+
+            if (!shouldComment) {
+              if (existingComment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id
+                });
+              }
+              return;
             }
 
             const guidance = [
@@ -235,28 +284,43 @@ jobs:
             ];
 
             const commentBody = [
+              marker,
               'Automated check (CONTRIBUTING.md)',
               ''
             ];
 
             if (findings.length > 0) {
               commentBody.push('Findings:');
-              commentBody.push(...findings.map(f => `- ${f}`));
+              commentBody.push(...findings.map((finding) => `- ${finding}`));
               commentBody.push('');
             }
 
             if (recommendations.length > 0) {
               commentBody.push('Recommendations:');
-              commentBody.push(...recommendations.map(f => `- ${f}`));
+              commentBody.push(...recommendations.map((recommendation) => `- ${recommendation}`));
               commentBody.push('');
             }
 
             commentBody.push('Next steps:');
             commentBody.push(...guidance);
 
+            const bodyText = commentBody.join('\n');
+
+            if (existingComment) {
+              if (existingComment.body !== bodyText) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: existingComment.id,
+                  body: bodyText
+                });
+              }
+              return;
+            }
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number,
-              body: commentBody.join('\n')
+              body: bodyText
             });
