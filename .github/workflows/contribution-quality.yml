@@ -119,12 +119,12 @@ jobs:
             const CODE_ONLY_MAX_LINES = 8;
             const MAX_ISSUES_TO_CHECK = 5;
 
-            const files = await github.rest.pulls.listFiles({
+            const allFiles = await github.paginate(github.rest.pulls.listFiles, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: prNumber,
               per_page: 100
-            }).then(r => r.data);
+            });
 
             const ext = (p) => {
               const i = p.lastIndexOf('.');
@@ -134,12 +134,12 @@ jobs:
             const CODE = new Set(['.rs', '.go', '.py', '.ts', '.tsx', '.js', '.jsx', '.java', '.kt', '.cpp', '.c', '.hpp', '.hh', '.h', '.rb', '.swift', '.scala', '.php', '.sh', '.bash', '.zsh', '.ps1', '.yaml', '.yml', '.toml', '.json']);
             const TEST_HINTS = [/^tests?\//i, /\/tests?\//i, /_test\./i, /\.spec\./i, /\.test\./i];
 
-            const changedFiles = files.length;
-            const adds = files.reduce((a, f) => a + (f.additions || 0), 0);
-            const dels = files.reduce((a, f) => a + (f.deletions || 0), 0);
-            const onlyDocs = changedFiles > 0 && files.every(f => DOCS.has(ext(f.filename)));
-            const onlyCode = changedFiles > 0 && files.every(f => CODE.has(ext(f.filename)));
-            const touchesTests = files.some(f => TEST_HINTS.some(rx => rx.test(f.filename)));
+            const changedFiles = allFiles.length;
+            const adds = allFiles.reduce((a, f) => a + (f.additions || 0), 0);
+            const dels = allFiles.reduce((a, f) => a + (f.deletions || 0), 0);
+            const onlyDocs = changedFiles > 0 && allFiles.every(f => DOCS.has(ext(f.filename)));
+            const onlyCode = changedFiles > 0 && allFiles.every(f => CODE.has(ext(f.filename)));
+            const touchesTests = allFiles.some(f => TEST_HINTS.some(rx => rx.test(f.filename)));
 
             const sameRepoSlug = `${context.repo.owner}/${context.repo.repo}`.toLowerCase();
             const issueNums = new Set();
@@ -208,12 +208,14 @@ jobs:
             core.setOutput('recommendations', JSON.stringify(recommendations));
             core.setOutput('linked', linkedNumber ? String(linkedNumber) : '');
             core.setOutput('pr_number', String(prNumber));
+            core.setOutput('completed', 'true');
 
       - name: Sync label and comment
         if: always() && steps.ctx.outputs.pr_number != ''
         uses: actions/github-script@v7
         env:
           SKIP: ${{ steps.gate.outputs.skip }}
+          EVAL_COMPLETED: ${{ steps.eval.outputs.completed }}
           FINDINGS: ${{ steps.eval.outputs.findings }}
           RECOMMENDATIONS: ${{ steps.eval.outputs.recommendations }}
           LINK: ${{ steps.eval.outputs.linked }}
@@ -223,10 +225,15 @@ jobs:
           script: |
             const issue_number = parseInt(process.env.PRNUM, 10);
             const skip = process.env.SKIP === 'true';
+            const evalCompleted = process.env.EVAL_COMPLETED === 'true';
             const findings = JSON.parse(process.env.FINDINGS || "[]");
             const recommendations = JSON.parse(process.env.RECOMMENDATIONS || "[]");
             const linked = process.env.LINK;
             const hasFindings = process.env.HAS_FINDINGS === 'true';
+            if (!skip && !evalCompleted) {
+              core.warning('Contribution-quality evaluation did not complete; leaving existing label and comment untouched.');
+              return;
+            }
             const shouldComment = !skip && (findings.length > 0 || recommendations.length > 0);
             const marker = '<!-- contribution-quality-comment -->';
             const legacyHeader = 'Automated check (CONTRIBUTING.md)';
