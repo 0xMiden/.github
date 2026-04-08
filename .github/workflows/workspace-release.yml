@@ -26,10 +26,10 @@ on:
         type: string
         default: "main"
       cargo_msrv_toolchain:
-        description: "Rust toolchain used to run cargo-msrv"
+        description: "Rust toolchain used to run cargo-msrv. If unset, use the caller repo toolchain."
         required: false
         type: string
-        default: "1.91"
+        default: ""
       msrv_script_path:
         description: "Path to the caller repository script that checks workspace MSRV"
         required: true
@@ -128,18 +128,34 @@ jobs:
         with:
           tool: cargo-binstall
 
+      - name: Resolve cargo-msrv toolchain
+        id: resolve_cargo_msrv_toolchain
+        shell: bash
+        run: |
+          toolchain="${{ inputs.cargo_msrv_toolchain }}"
+          if [ -z "$toolchain" ]; then
+            toolchain="$(rustup show active-toolchain | awk '{print $1}')"
+          fi
+
+          if [ -z "$toolchain" ]; then
+            echo "::error::Could not resolve a toolchain for cargo-msrv."
+            exit 1
+          fi
+
+          echo "toolchain=$toolchain" >> "$GITHUB_OUTPUT"
+
       - name: Install cargo-msrv
         shell: bash
         run: cargo binstall --no-confirm --force cargo-msrv
 
       - name: Install Rust toolchain for cargo-msrv
         shell: bash
-        run: rustup toolchain install "${{ inputs.cargo_msrv_toolchain }}"
+        run: rustup toolchain install "${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}"
 
       - name: Check MSRV
         shell: bash
         env:
-          RUSTUP_TOOLCHAIN: ${{ inputs.cargo_msrv_toolchain }}
+          RUSTUP_TOOLCHAIN: ${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}
         run: |
           if [ ! -f "${{ inputs.msrv_script_path }}" ]; then
             echo "::error::MSRV script not found at '${{ inputs.msrv_script_path }}'."
@@ -285,18 +301,34 @@ jobs:
         with:
           tool: cargo-binstall
 
+      - name: Resolve cargo-msrv toolchain
+        id: resolve_cargo_msrv_toolchain
+        shell: bash
+        run: |
+          toolchain="${{ inputs.cargo_msrv_toolchain }}"
+          if [ -z "$toolchain" ]; then
+            toolchain="$(rustup show active-toolchain | awk '{print $1}')"
+          fi
+
+          if [ -z "$toolchain" ]; then
+            echo "::error::Could not resolve a toolchain for cargo-msrv."
+            exit 1
+          fi
+
+          echo "toolchain=$toolchain" >> "$GITHUB_OUTPUT"
+
       - name: Install cargo-msrv
         shell: bash
         run: cargo binstall --no-confirm --force cargo-msrv
 
       - name: Install Rust toolchain for cargo-msrv
         shell: bash
-        run: rustup toolchain install "${{ inputs.cargo_msrv_toolchain }}"
+        run: rustup toolchain install "${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}"
 
       - name: Check MSRV
         shell: bash
         env:
-          RUSTUP_TOOLCHAIN: ${{ inputs.cargo_msrv_toolchain }}
+          RUSTUP_TOOLCHAIN: ${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}
         run: |
           if [ ! -f "${{ inputs.msrv_script_path }}" ]; then
             echo "::error::MSRV script not found at '${{ inputs.msrv_script_path }}'."
