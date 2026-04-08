@@ -25,11 +25,6 @@ on:
         required: false
         type: string
         default: "main"
-      rust_toolchain:
-        description: "Rust toolchain used for cargo publish"
-        required: false
-        type: string
-        default: "1.90"
       cargo_msrv_toolchain:
         description: "Rust toolchain used to run cargo-msrv"
         required: false
@@ -40,15 +35,10 @@ on:
         required: true
         type: string
       environment_name:
-        description: "Optional caller-repository environment name for protected releases"
+        description: "Protected environment name. Required in publish mode."
         required: false
         type: string
         default: ""
-      cleanup_runner:
-        description: "Remove large preinstalled runner tools before packaging"
-        required: false
-        type: boolean
-        default: true
 
     secrets:
       cargo_registry_token:
@@ -79,6 +69,11 @@ jobs:
               ;;
           esac
 
+          if [ "${{ inputs.mode }}" = "publish" ] && [ -z "${{ inputs.environment_name }}" ]; then
+            echo "::error::Publish mode requires environment_name so crates.io trusted publishing can run through a protected environment."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -102,9 +97,10 @@ jobs:
           fi
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: ${{ inputs.rust_toolchain }}
+          cache: false
+          rustflags: ""
 
       - name: Cache cargo registry and git index
         uses: actions/cache@v4
@@ -117,7 +113,6 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Cleanup large tools for build space
-        if: ${{ inputs.cleanup_runner }}
         shell: bash
         run: |
           echo "=== Cleaning up GitHub Actions runner to free disk space ==="
@@ -163,6 +158,8 @@ jobs:
         if: ${{ inputs.mode == 'dry-run' || inputs.mode == 'publish' }}
         continue-on-error: ${{ inputs.mode == 'publish' }}
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          rust-toolchain: manual
 
       - name: Report semver check failure
         if: ${{ inputs.mode == 'publish' && steps.semver_checks.outcome == 'failure' }}
@@ -229,6 +226,11 @@ jobs:
               ;;
           esac
 
+          if [ "${{ inputs.mode }}" = "publish" ] && [ -z "${{ inputs.environment_name }}" ]; then
+            echo "::error::Publish mode requires environment_name so crates.io trusted publishing can run through a protected environment."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -252,9 +254,10 @@ jobs:
           fi
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: ${{ inputs.rust_toolchain }}
+          cache: false
+          rustflags: ""
 
       - name: Cache cargo registry and git index
         uses: actions/cache@v4
@@ -267,7 +270,6 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Cleanup large tools for build space
-        if: ${{ inputs.cleanup_runner }}
         shell: bash
         run: |
           echo "=== Cleaning up GitHub Actions runner to free disk space ==="
@@ -313,6 +315,8 @@ jobs:
         if: ${{ inputs.mode == 'dry-run' || inputs.mode == 'publish' }}
         continue-on-error: ${{ inputs.mode == 'publish' }}
         uses: obi1kenobi/cargo-semver-checks-action@v2
+        with:
+          rust-toolchain: manual
 
       - name: Report semver check failure
         if: ${{ inputs.mode == 'publish' && steps.semver_checks.outcome == 'failure' }}
