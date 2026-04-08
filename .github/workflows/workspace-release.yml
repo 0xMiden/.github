@@ -158,6 +158,24 @@ jobs:
         shell: bash
         run: rm -rf target/package
 
+      - name: Check public API semver compatibility
+        id: semver_checks
+        if: ${{ inputs.mode == 'dry-run' || inputs.mode == 'publish' }}
+        continue-on-error: ${{ inputs.mode == 'publish' }}
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+
+      - name: Report semver check failure
+        if: ${{ inputs.mode == 'publish' && steps.semver_checks.outcome == 'failure' }}
+        shell: bash
+        run: |
+          echo "::warning::cargo-semver-checks reported a possible semver regression. Publish mode continues by design; review the semver-checks logs above."
+          {
+            echo "## Semver Check Warning"
+            echo ""
+            echo "cargo-semver-checks reported a possible semver regression during publish mode."
+            echo "The release continued by design. Review the semver-checks logs before treating this release as semver-compatible."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Workaround for cargo#14283 and cargo#14789.
       - name: Clear cargo registry
         if: ${{ inputs.mode == 'dry-run' }}
@@ -289,6 +307,24 @@ jobs:
       - name: Clean packaging directory
         shell: bash
         run: rm -rf target/package
+
+      - name: Check public API semver compatibility
+        id: semver_checks
+        if: ${{ inputs.mode == 'dry-run' || inputs.mode == 'publish' }}
+        continue-on-error: ${{ inputs.mode == 'publish' }}
+        uses: obi1kenobi/cargo-semver-checks-action@v2
+
+      - name: Report semver check failure
+        if: ${{ inputs.mode == 'publish' && steps.semver_checks.outcome == 'failure' }}
+        shell: bash
+        run: |
+          echo "::warning::cargo-semver-checks reported a possible semver regression. Publish mode continues by design; review the semver-checks logs above."
+          {
+            echo "## Semver Check Warning"
+            echo ""
+            echo "cargo-semver-checks reported a possible semver regression during publish mode."
+            echo "The release continued by design. Review the semver-checks logs before treating this release as semver-compatible."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # Workaround for cargo#14283 and cargo#14789.
       - name: Clear cargo registry
