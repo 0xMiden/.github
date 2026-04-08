@@ -44,6 +44,9 @@ on:
       cargo_registry_token:
         description: "Optional crates.io token. If omitted, OIDC auth is used for publish mode."
         required: false
+      shared_workflow_repository_token:
+        description: "Optional token for checking out the shared workflow repository when it is private or internal."
+        required: false
 
 permissions:
   contents: read
@@ -56,20 +59,24 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CARGO_REGISTRY_TOKEN_INPUT: ${{ secrets.cargo_registry_token }}
+      SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
       - name: Validate inputs
         shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          ENVIRONMENT_NAME: ${{ inputs.environment_name }}
         run: |
-          case "${{ inputs.mode }}" in
+          case "$MODE" in
             dry-run|publish) ;;
             *)
-              echo "::error::Unsupported mode '${{ inputs.mode }}'. Expected 'dry-run' or 'publish'."
+              echo "::error::Unsupported mode '$MODE'. Expected 'dry-run' or 'publish'."
               exit 1
               ;;
           esac
 
-          if [ "${{ inputs.mode }}" = "publish" ] && [ -z "${{ inputs.environment_name }}" ]; then
+          if [ "$MODE" = "publish" ] && [ -z "$ENVIRONMENT_NAME" ]; then
             echo "::error::Publish mode requires environment_name so crates.io trusted publishing can run through a protected environment."
             exit 1
           fi
@@ -82,36 +89,40 @@ jobs:
       - name: Resolve shared workflow source
         id: shared_workflow_source
         shell: bash
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
-          workflow_ref="${{ github.workflow_ref }}"
-          repository="${workflow_ref%%/.github/workflows/*}"
-          ref="${workflow_ref##*@}"
+          repository="${WORKFLOW_REF%%/.github/workflows/*}"
 
           echo "repository=$repository" >> "$GITHUB_OUTPUT"
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Checkout shared workflow repository
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.shared_workflow_source.outputs.repository }}
-          ref: ${{ steps.shared_workflow_source.outputs.ref }}
+          ref: ${{ steps.shared_workflow_source.outputs.sha }}
           path: .shared-workflows
           fetch-depth: 1
+          token: ${{ env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT != '' && env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT || github.token }}
 
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
         shell: bash
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
         run: |
-          git fetch origin "${{ inputs.target_ref }}" --depth=1
-          target_sha="$(git rev-parse "origin/${{ inputs.target_ref }}")"
+          git fetch origin "$TARGET_REF" --depth=1
+          target_sha="$(git rev-parse "origin/$TARGET_REF")"
           checkout_sha="$(git rev-parse HEAD)"
 
-          echo "target_ref=${{ inputs.target_ref }}"
+          echo "target_ref=$TARGET_REF"
           echo "target_sha=$target_sha"
           echo "checkout_sha=$checkout_sha"
 
           if [ "$target_sha" != "$checkout_sha" ]; then
-            echo "::error::The checked out commit does not match origin/${{ inputs.target_ref }} HEAD. Aborting."
+            echo "::error::The checked out commit does not match origin/$TARGET_REF HEAD. Aborting."
             exit 1
           fi
 
@@ -142,8 +153,10 @@ jobs:
       - name: Resolve cargo-msrv toolchain
         id: resolve_cargo_msrv_toolchain
         shell: bash
+        env:
+          CARGO_MSRV_TOOLCHAIN_INPUT: ${{ inputs.cargo_msrv_toolchain }}
         run: |
-          toolchain="${{ inputs.cargo_msrv_toolchain }}"
+          toolchain="$CARGO_MSRV_TOOLCHAIN_INPUT"
           if [ -z "$toolchain" ]; then
             toolchain="$(rustup show active-toolchain | awk '{print $1}')"
           fi
@@ -167,14 +180,15 @@ jobs:
         shell: bash
         env:
           RUSTUP_TOOLCHAIN: ${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}
+          MSRV_SCRIPT_PATH: ${{ inputs.msrv_script_path }}
         run: |
-          if [ ! -f "${{ inputs.msrv_script_path }}" ]; then
-            echo "::error::MSRV script not found at '${{ inputs.msrv_script_path }}'."
+          if [ ! -f "$MSRV_SCRIPT_PATH" ]; then
+            echo "::error::MSRV script not found at '$MSRV_SCRIPT_PATH'."
             exit 1
           fi
 
           export PATH="$HOME/.cargo/bin:$PATH"
-          bash "${{ inputs.msrv_script_path }}"
+          bash "$MSRV_SCRIPT_PATH"
 
       - name: Clean packaging directory
         shell: bash
@@ -229,8 +243,6 @@ jobs:
       - name: Publish workspace crates
         if: ${{ inputs.mode == 'publish' }}
         shell: bash
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ env.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --workspace
 
   workspace-release-with-environment:
@@ -240,20 +252,24 @@ jobs:
     environment: ${{ inputs.environment_name }}
     env:
       CARGO_REGISTRY_TOKEN_INPUT: ${{ secrets.cargo_registry_token }}
+      SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
       - name: Validate inputs
         shell: bash
+        env:
+          MODE: ${{ inputs.mode }}
+          ENVIRONMENT_NAME: ${{ inputs.environment_name }}
         run: |
-          case "${{ inputs.mode }}" in
+          case "$MODE" in
             dry-run|publish) ;;
             *)
-              echo "::error::Unsupported mode '${{ inputs.mode }}'. Expected 'dry-run' or 'publish'."
+              echo "::error::Unsupported mode '$MODE'. Expected 'dry-run' or 'publish'."
               exit 1
               ;;
           esac
 
-          if [ "${{ inputs.mode }}" = "publish" ] && [ -z "${{ inputs.environment_name }}" ]; then
+          if [ "$MODE" = "publish" ] && [ -z "$ENVIRONMENT_NAME" ]; then
             echo "::error::Publish mode requires environment_name so crates.io trusted publishing can run through a protected environment."
             exit 1
           fi
@@ -266,36 +282,40 @@ jobs:
       - name: Resolve shared workflow source
         id: shared_workflow_source
         shell: bash
+        env:
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
         run: |
-          workflow_ref="${{ github.workflow_ref }}"
-          repository="${workflow_ref%%/.github/workflows/*}"
-          ref="${workflow_ref##*@}"
+          repository="${WORKFLOW_REF%%/.github/workflows/*}"
 
           echo "repository=$repository" >> "$GITHUB_OUTPUT"
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "sha=$WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Checkout shared workflow repository
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.shared_workflow_source.outputs.repository }}
-          ref: ${{ steps.shared_workflow_source.outputs.ref }}
+          ref: ${{ steps.shared_workflow_source.outputs.sha }}
           path: .shared-workflows
           fetch-depth: 1
+          token: ${{ env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT != '' && env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT || github.token }}
 
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
         shell: bash
+        env:
+          TARGET_REF: ${{ inputs.target_ref }}
         run: |
-          git fetch origin "${{ inputs.target_ref }}" --depth=1
-          target_sha="$(git rev-parse "origin/${{ inputs.target_ref }}")"
+          git fetch origin "$TARGET_REF" --depth=1
+          target_sha="$(git rev-parse "origin/$TARGET_REF")"
           checkout_sha="$(git rev-parse HEAD)"
 
-          echo "target_ref=${{ inputs.target_ref }}"
+          echo "target_ref=$TARGET_REF"
           echo "target_sha=$target_sha"
           echo "checkout_sha=$checkout_sha"
 
           if [ "$target_sha" != "$checkout_sha" ]; then
-            echo "::error::The checked out commit does not match origin/${{ inputs.target_ref }} HEAD. Aborting."
+            echo "::error::The checked out commit does not match origin/$TARGET_REF HEAD. Aborting."
             exit 1
           fi
 
@@ -326,8 +346,10 @@ jobs:
       - name: Resolve cargo-msrv toolchain
         id: resolve_cargo_msrv_toolchain
         shell: bash
+        env:
+          CARGO_MSRV_TOOLCHAIN_INPUT: ${{ inputs.cargo_msrv_toolchain }}
         run: |
-          toolchain="${{ inputs.cargo_msrv_toolchain }}"
+          toolchain="$CARGO_MSRV_TOOLCHAIN_INPUT"
           if [ -z "$toolchain" ]; then
             toolchain="$(rustup show active-toolchain | awk '{print $1}')"
           fi
@@ -351,14 +373,15 @@ jobs:
         shell: bash
         env:
           RUSTUP_TOOLCHAIN: ${{ steps.resolve_cargo_msrv_toolchain.outputs.toolchain }}
+          MSRV_SCRIPT_PATH: ${{ inputs.msrv_script_path }}
         run: |
-          if [ ! -f "${{ inputs.msrv_script_path }}" ]; then
-            echo "::error::MSRV script not found at '${{ inputs.msrv_script_path }}'."
+          if [ ! -f "$MSRV_SCRIPT_PATH" ]; then
+            echo "::error::MSRV script not found at '$MSRV_SCRIPT_PATH'."
             exit 1
           fi
 
           export PATH="$HOME/.cargo/bin:$PATH"
-          bash "${{ inputs.msrv_script_path }}"
+          bash "$MSRV_SCRIPT_PATH"
 
       - name: Clean packaging directory
         shell: bash
@@ -413,6 +436,4 @@ jobs:
       - name: Publish workspace crates
         if: ${{ inputs.mode == 'publish' }}
         shell: bash
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ env.CARGO_REGISTRY_TOKEN }}
         run: cargo publish --workspace
