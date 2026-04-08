@@ -41,9 +41,6 @@ on:
         default: ""
 
     secrets:
-      cargo_registry_token:
-        description: "Optional crates.io token. If omitted, OIDC auth is used for publish mode."
-        required: false
       shared_workflow_repository_token:
         description: "Optional token for checking out the shared workflow repository when it is private or internal."
         required: false
@@ -58,7 +55,6 @@ jobs:
     name: Workspace release (${{ inputs.mode }})
     runs-on: ubuntu-latest
     env:
-      CARGO_REGISTRY_TOKEN_INPUT: ${{ secrets.cargo_registry_token }}
       SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
@@ -220,20 +216,10 @@ jobs:
         shell: bash
         run: rm -rf ~/.cargo/registry/{cache,index,src}
 
-      - name: Use provided crates.io token
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT != '' }}
-        shell: bash
-        run: echo "CARGO_REGISTRY_TOKEN=${CARGO_REGISTRY_TOKEN_INPUT}" >> "$GITHUB_ENV"
-
       - name: Authenticate with crates.io
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT == '' }}
+        if: ${{ inputs.mode == 'publish' }}
         id: crates-io-auth
         uses: rust-lang/crates-io-auth-action@v1
-
-      - name: Export crates.io token from OIDC auth
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT == '' }}
-        shell: bash
-        run: echo "CARGO_REGISTRY_TOKEN=${{ steps.crates-io-auth.outputs.token }}" >> "$GITHUB_ENV"
 
       - name: Dry-run workspace publish
         if: ${{ inputs.mode == 'dry-run' }}
@@ -243,6 +229,8 @@ jobs:
       - name: Publish workspace crates
         if: ${{ inputs.mode == 'publish' }}
         shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
         run: cargo publish --workspace
 
   workspace-release-with-environment:
@@ -251,7 +239,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
     env:
-      CARGO_REGISTRY_TOKEN_INPUT: ${{ secrets.cargo_registry_token }}
       SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
@@ -413,20 +400,10 @@ jobs:
         shell: bash
         run: rm -rf ~/.cargo/registry/{cache,index,src}
 
-      - name: Use provided crates.io token
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT != '' }}
-        shell: bash
-        run: echo "CARGO_REGISTRY_TOKEN=${CARGO_REGISTRY_TOKEN_INPUT}" >> "$GITHUB_ENV"
-
       - name: Authenticate with crates.io
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT == '' }}
+        if: ${{ inputs.mode == 'publish' }}
         id: crates-io-auth
         uses: rust-lang/crates-io-auth-action@v1
-
-      - name: Export crates.io token from OIDC auth
-        if: ${{ inputs.mode == 'publish' && env.CARGO_REGISTRY_TOKEN_INPUT == '' }}
-        shell: bash
-        run: echo "CARGO_REGISTRY_TOKEN=${{ steps.crates-io-auth.outputs.token }}" >> "$GITHUB_ENV"
 
       - name: Dry-run workspace publish
         if: ${{ inputs.mode == 'dry-run' }}
@@ -436,4 +413,6 @@ jobs:
       - name: Publish workspace crates
         if: ${{ inputs.mode == 'publish' }}
         shell: bash
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}
         run: cargo publish --workspace
