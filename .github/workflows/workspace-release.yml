@@ -79,6 +79,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve shared workflow source
+        id: shared_workflow_source
+        shell: bash
+        run: |
+          workflow_ref="${{ github.workflow_ref }}"
+          repository="${workflow_ref%%/.github/workflows/*}"
+          ref="${workflow_ref##*@}"
+
+          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout shared workflow repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.shared_workflow_source.outputs.repository }}
+          ref: ${{ steps.shared_workflow_source.outputs.ref }}
+          path: .shared-workflows
+          fetch-depth: 1
+
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
         shell: bash
@@ -113,15 +132,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Cleanup large tools for build space
-        shell: bash
-        run: |
-          echo "=== Cleaning up GitHub Actions runner to free disk space ==="
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android
-          sudo docker system prune -af --volumes || true
-          sudo apt-get remove -y '^ghc-.*' '^php.*' '^mongodb.*' '^mysql.*' '^postgresql.*' || true
-          sudo apt-get autoremove -y || true
-          sudo apt-get clean || true
-          df -h
+        uses: ./.shared-workflows/.github/actions/cleanup-runner
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
@@ -252,6 +263,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve shared workflow source
+        id: shared_workflow_source
+        shell: bash
+        run: |
+          workflow_ref="${{ github.workflow_ref }}"
+          repository="${workflow_ref%%/.github/workflows/*}"
+          ref="${workflow_ref##*@}"
+
+          echo "repository=$repository" >> "$GITHUB_OUTPUT"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout shared workflow repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.shared_workflow_source.outputs.repository }}
+          ref: ${{ steps.shared_workflow_source.outputs.ref }}
+          path: .shared-workflows
+          fetch-depth: 1
+
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
         shell: bash
@@ -286,15 +316,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Cleanup large tools for build space
-        shell: bash
-        run: |
-          echo "=== Cleaning up GitHub Actions runner to free disk space ==="
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android
-          sudo docker system prune -af --volumes || true
-          sudo apt-get remove -y '^ghc-.*' '^php.*' '^mongodb.*' '^mysql.*' '^postgresql.*' || true
-          sudo apt-get autoremove -y || true
-          sudo apt-get clean || true
-          df -h
+        uses: ./.shared-workflows/.github/actions/cleanup-runner
 
       - name: Install cargo-binstall
         uses: taiki-e/install-action@v2
