@@ -1,0 +1,16 @@
+name: Cleanup Runner
+description: Remove unused tools in the runner image to free disk space
+
+runs:
+  using: composite
+  steps:
+    - name: Remove unused tools in the runner image
+      shell: bash
+      run: |
+        echo "=== Cleaning up GitHub Actions runner to free disk space ==="
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android
+        sudo docker system prune -af --volumes || true
+        sudo apt-get remove -y '^ghc-.*' '^php.*' '^mongodb.*' '^mysql.*' '^postgresql.*' || true
+        sudo apt-get autoremove -y || true
+        sudo apt-get clean || true
+        df -h
