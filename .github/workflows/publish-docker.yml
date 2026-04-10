@@ -42,17 +42,25 @@ on:
         description: 'AWS cache bucket'
         required: true
 
+# Default the token to no scopes; each job opts into only the scopes it needs.
+permissions: {}
+
 jobs:
   publish:
     runs-on:
       labels: "ubuntu-latest"
     name: Publish ${{ inputs.component }} ${{ inputs.version }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.version }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -62,23 +70,22 @@ jobs:
           password: ${{ secrets.gh_token }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-region: ${{ secrets.aws_region }}
           role-to-assume: ${{ secrets.aws_role }}
           role-session-name: GithubActionsSession
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
         with:
           cache-binary: true
 
       - name: Build and push Docker image
         id: push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           push: true
-          labels: ${{ steps.meta.outputs.labels }}
           file: ${{ inputs.dockerfile_path }}
           tags: ${{ inputs.registry }}/0xmiden/miden-${{ inputs.component }}:${{ inputs.version }}
           cache-from: type=s3,region=${{ secrets.aws_region }},bucket=${{ secrets.aws_cache_bucket }},name=miden-${{ inputs.component }}

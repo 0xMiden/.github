@@ -1,0 +1,40 @@
+name: GitHub Actions Security Analysis
+
+on:
+  pull_request:
+    paths:
+      - ".github/actions/**"
+      - ".github/workflows/**"
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/actions/**"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+# Default the token to no scopes; the zizmor job opts into read-only analysis access below.
+permissions: {}
+
+jobs:
+  zizmor:
+    name: Run zizmor
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
+        with:
+          inputs: ".github/workflows .github/actions"
+          # Avoid a GitHub Advanced Security dependency; this keeps the new check usable in private repos too.
+          advanced-security: false
+          # Gate high-severity issues now while medium advisory findings are handled without breaking callers.
+          min-severity: high
+          # Pin the scanner version so a hash-pinned action cannot silently install a different zizmor release.
+          version: v1.23.1

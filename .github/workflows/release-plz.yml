@@ -18,23 +18,32 @@ on:
         description: 'Cargo registry token'
         required: true
 
+# Default the token to no scopes; the release job opts into publication scopes below.
+permissions: {}
+
 jobs:
   release-plz-release:
     name: Release-plz release
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == '0xMiden' }}
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
           ref: main
+          persist-credentials: false
       # Ensure the release tag refers to the latest commit on target ref.
       # Compare the commit SHA that triggered the workflow with the HEAD of the branch we just
       # checked out (main).
       - name: Verify release was triggered from the target ref HEAD
+        env:
+          TRIGGER_SHA: ${{ github.sha }}
         run: |
-          tag_sha="${{ github.sha }}"
+          tag_sha="$TRIGGER_SHA"
           main_sha="$(git rev-parse HEAD)"
 
           echo "Tag points to:        $tag_sha"
@@ -49,7 +58,7 @@ jobs:
         run: |
           rustup update --no-self-update
       - name: Run release-plz
-        uses: release-plz/action@v0.5
+        uses: release-plz/action@1528104d2ca23787631a1c1f022abb64b34c1e11 # v0.5
         with:
           command: release
           config: ${{ inputs.release_config }}
