@@ -40,11 +40,6 @@ on:
         type: string
         default: ""
 
-    secrets:
-      shared_workflow_repository_token:
-        description: "Optional token for checking out the shared workflow repository when it is private or internal."
-        required: false
-
 permissions:
   contents: read
   id-token: write
@@ -54,8 +49,6 @@ jobs:
     if: ${{ inputs.environment_name == '' }}
     name: Workspace release (${{ inputs.mode }})
     runs-on: ubuntu-latest
-    env:
-      SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
       - name: Validate inputs
@@ -103,7 +96,6 @@ jobs:
           path: .shared-workflows
           fetch-depth: 1
           persist-credentials: false
-          token: ${{ env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT != '' && env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT || github.token }}
 
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
@@ -242,8 +234,6 @@ jobs:
     name: Workspace release (${{ inputs.mode }})
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment_name }}
-    env:
-      SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT: ${{ secrets.shared_workflow_repository_token }}
 
     steps:
       - name: Validate inputs
@@ -291,7 +281,6 @@ jobs:
           path: .shared-workflows
           fetch-depth: 1
           persist-credentials: false
-          token: ${{ env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT != '' && env.SHARED_WORKFLOW_REPOSITORY_TOKEN_INPUT || github.token }}
 
       - name: Verify checked out commit matches target ref HEAD
         if: ${{ inputs.verify_target_ref_head }}
