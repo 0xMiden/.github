@@ -1,0 +1,31 @@
+name: Cleanup Runner
+description: Remove unused tools from GitHub-hosted Ubuntu runners to free disk space
+
+runs:
+  using: composite
+  steps:
+    - name: Remove unused tools in the runner image
+      shell: bash
+      run: |
+        if [ "${RUNNER_OS:-}" != "Linux" ]; then
+          echo "::error::cleanup-runner only supports Linux runners."
+          exit 1
+        fi
+
+        if [ "${RUNNER_ENVIRONMENT:-}" != "github-hosted" ]; then
+          echo "::error::cleanup-runner only supports GitHub-hosted runners."
+          exit 1
+        fi
+
+        if ! command -v apt-get >/dev/null 2>&1; then
+          echo "::error::cleanup-runner expects an Ubuntu-based runner with apt-get."
+          exit 1
+        fi
+
+        echo "=== Cleaning up GitHub Actions runner to free disk space ==="
+        sudo rm -rf /usr/share/dotnet /usr/local/lib/android
+        sudo docker system prune -af --volumes || true
+        sudo apt-get remove -y '^ghc-.*' '^php.*' '^mongodb.*' '^mysql.*' '^postgresql.*' || true
+        sudo apt-get autoremove -y || true
+        sudo apt-get clean || true
+        df -h
