@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
     env:
       DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
       DISPATCH_FORCE_ALL: ${{ inputs.force_all }}
