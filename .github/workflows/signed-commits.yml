@@ -1,20 +1,26 @@
 # Verifies that all commits in a PR are signed (GPG or SSH).
 # Caller responsibilities:
 # - Trigger on `pull_request_target`.
-# - Grant `contents: read` and `issues: write`.
+# - Grant `pull-requests: read` and `issues: write`.
 
 name: signed commits
 
 on:
   workflow_call:
 
+# Default the token to no scopes; this check only reads PR commits and writes/removes issue comments.
+permissions: {}
+
 jobs:
   check-signed-commits:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
     steps:
       - name: Check for unsigned commits
         id: check
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
@@ -47,7 +53,7 @@ jobs:
 
       - name: Sync remediation comment
         if: always() && steps.check.outputs.pr_number != ''
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           COMPLETED: ${{ steps.check.outputs.completed }}
           UNSIGNED: ${{ steps.check.outputs.unsigned }}

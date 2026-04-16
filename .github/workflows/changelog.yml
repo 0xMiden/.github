@@ -12,14 +12,20 @@ on:
         type: string
         default: 'CHANGELOG.md'
 
+# Default the token to no scopes; this check only needs repository read access.
+permissions: {}
+
 jobs:
   changelog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - name: Check for changes in changelog
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}

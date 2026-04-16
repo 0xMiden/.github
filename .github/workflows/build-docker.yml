@@ -37,37 +37,40 @@ on:
         description: 'AWS cache bucket'
         required: false
 
+# Default the token to no scopes; each job opts into only the scopes it needs.
+permissions: {}
+
 jobs:
   docker-build:
     runs-on: ubuntu-latest
     name: Build ${{ inputs.component }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Configure AWS credentials
         if: ${{ github.event.pull_request.head.repo.fork == false && inputs.use_cache }}
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
         with:
           aws-region: ${{ secrets.aws_region }}
           role-to-assume: ${{ secrets.aws_role }}
           role-session-name: GithubActionsSession
 
-      - name: Set cache parameters
-        if: ${{ github.event.pull_request.head.repo.fork == false && inputs.use_cache }}
-        run: |
-          echo "CACHE_FROM=type=s3,region=${{ secrets.aws_region }},bucket=${{ secrets.aws_cache_bucket }},name=miden-${{ inputs.component }}" >> $GITHUB_ENV
-          echo "CACHE_TO=type=s3,region=${{ secrets.aws_region }},bucket=${{ secrets.aws_cache_bucket }},name=miden-${{ inputs.component }}" >> $GITHUB_ENV
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
         with:
           cache-binary: true
 
       - name: Build Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5
         with:
           push: false
           file: ${{ inputs.dockerfile_path }}
-          cache-from: ${{ env.CACHE_FROM || '' }}
-          cache-to: ${{ env.CACHE_TO || '' }}
+          # BuildKit cache settings stay in expressions rather than a shell step, avoiding command-injection risk.
+          cache-from: ${{ github.event.pull_request.head.repo.fork == false && inputs.use_cache && format('type=s3,region={0},bucket={1},name=miden-{2}', secrets.aws_region, secrets.aws_cache_bucket, inputs.component) || '' }}
+          cache-to: ${{ github.event.pull_request.head.repo.fork == false && inputs.use_cache && format('type=s3,region={0},bucket={1},name=miden-{2}', secrets.aws_region, secrets.aws_cache_bucket, inputs.component) || '' }}
