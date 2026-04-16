@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
     env:
       DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
       DISPATCH_FORCE_ALL: ${{ inputs.force_all }}
@@ -246,11 +246,15 @@ jobs:
             const recommendations = JSON.parse(process.env.RECOMMENDATIONS || "[]");
             const linked = process.env.LINK;
             const hasFindings = process.env.HAS_FINDINGS === 'true';
-            if (!skip && !evalCompleted) {
+            if (skip) {
+              core.info('Skipping label and comment sync for trusted author or draft PR.');
+              return;
+            }
+            if (!evalCompleted) {
               core.warning('Contribution-quality evaluation did not complete; leaving existing label and comment untouched.');
               return;
             }
-            const shouldComment = !skip && (findings.length > 0 || recommendations.length > 0);
+            const shouldComment = findings.length > 0 || recommendations.length > 0;
             const marker = '<!-- contribution-quality-comment -->';
             const legacyHeader = 'Automated check (CONTRIBUTING.md)';
 
