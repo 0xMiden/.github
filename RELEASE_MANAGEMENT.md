@@ -6,6 +6,8 @@ This document describes the branching strategy, release process, and policies fo
 
 Development happens on a single branch (`next`). When a minor version is ready to ship, we create a dedicated branch for it (`release/vX.Y`). All releases of that minor version - the initial `vX.Y.0` and every later patch (`vX.Y.1`, ...) - are tagged from that branch. The branch is kept alive as long as we still ship patches for that minor version.
 
+Once a release branch is cut, it is never merged back into `next`, and `next` is never merged into it. Fixes flow from `next` to release branches by cherry-pick, not by merge. This keeps the git history a clean DAG and avoids the divergence pain that comes from periodic back-and-forth merges between long-lived branches.
+
 ### Branches
 
 - `next` - primary development branch. All new work targets `next`.
@@ -18,6 +20,8 @@ Development happens on a single branch (`next`). When a minor version is ready t
 3. Once a release branch exists, only non-breaking fixes and backports may merge to it.
 4. All new features and breaking changes target `next`.
 5. Try to keep any new changes non-breaking, if possible, to continue improving the latest released version.
+6. Never merge `next` into a `release/*` branch (or vice versa). Backports happen by cherry-pick.
+7. Fixes land on `next` first, then get backported. Unless a fix only makes sense on a release branch (e.g., it touches code that no longer exists on `next`), the change must land on `next` first; the backport PR against `release/vX.Y` references the original `next` PR.
 
 ## Breaking Changes
 
@@ -45,10 +49,12 @@ PRs with breaking changes should also include a migration note in the descriptio
 
 ### Patch Releases (X.Y.Z where Z > 0)
 
-1. Backport non-breaking fixes to `release/vX.Y` (cherry-pick from `next`, or open PRs directly against the release branch). CI semver-checks blocks any breaking change.
-2. Tag and publish. Create a new GitHub release from `release/vX.Y`, which creates the `vX.Y.Z` tag and triggers publish automation.
+1. Land the fix on `next` first via a normal PR.
+2. Open a backport PR against `release/vX.Y`, cherry-picking the commit(s) and adapting as needed. Reference the original `next` PR in the description so it's easy to track which release branches received which fix. CI semver-checks blocks any breaking change.
+3. Hotfix exception. If a fix only makes sense on the release branch (the affected code no longer exists on `next`), open the PR directly against `release/vX.Y` and note why it isn't going to `next`.
+4. Tag and publish. Create a new GitHub release from `release/vX.Y`, which creates the `vX.Y.Z` tag and triggers publish automation.
 
-The same `release/vX.Y` branch hosts all patch tags for the X.Y line.
+The same `release/vX.Y` branch hosts all patch tags for the X.Y line. `next` and `release/*` branches are never merged into each other.
 
 ## Documentation
 
