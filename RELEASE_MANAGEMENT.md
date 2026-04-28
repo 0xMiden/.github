@@ -4,9 +4,7 @@ This document describes the branching strategy, release process, and policies fo
 
 ## Branching Strategy
 
-Development happens on a single trunk branch (`next`). When a minor version is ready to ship, we create a dedicated branch for it (`release/vX.Y`). All releases of that minor version - the initial `vX.Y.0` and every later patch (`vX.Y.1`, `vX.Y.2`, ...) - are tagged from that branch. The branch is kept alive as long as we still ship patches for that minor version.
-
-This keeps day-to-day development on `next` unblocked (including breaking changes) while giving each released minor version a stable line where only safe fixes land.
+Development happens on a single branch (`next`). When a minor version is ready to ship, we create a dedicated branch for it (`release/vX.Y`). All releases of that minor version - the initial `vX.Y.0` and every later patch (`vX.Y.1`, ...) - are tagged from that branch. The branch is kept alive as long as we still ship patches for that minor version.
 
 ### Branches
 
@@ -15,12 +13,15 @@ This keeps day-to-day development on `next` unblocked (including breaking change
 
 ### Key Principles
 
-1. One release branch per minor version. `release/v0.14` hosts `v0.14.0`, `v0.14.1`, `v0.14.2`, etc.
+1. One release branch per minor version. `release/v0.14` hosts tags `v0.14.0`, `v0.14.1`, etc.
 2. Create the release branch only when stabilization begins, not in anticipation. Until then, `next` is the development line.
 3. Once a release branch exists, only non-breaking fixes and backports may merge to it.
 4. All new features and breaking changes target `next`.
+5. Try to keep any new changes non-breaking, if possible, to continue improving the latest released version.
 
 ## Breaking Changes
+
+To start with, we will use a combination of CI enforcement (on the `release/*` branches) and a `[BREAKING]` label (on `next` PRs) to indicate breaking changes.
 
 ### CI Enforcement
 
@@ -28,18 +29,9 @@ All PRs run `cargo-semver-checks`, which compares the public API against a basel
 
 For PRs targeting `release/*` branches, a detected breaking change blocks the merge.
 
-For PRs targeting `next`, semver-checks is informational. Breaking changes are allowed on `next` but should be flagged.
-
-To run locally:
-
-```bash
-cargo install cargo-semver-checks
-cargo semver-checks
-```
-
 ### `[BREAKING]` Label
 
-PRs that introduce breaking changes must carry a `[BREAKING]` label. This is a backstop for cases that semver-checks may miss (e.g., behavioral changes, semantic guarantees), and feeds reviewer attention and changelog tooling. Label-flagged PRs targeting `release/*` are blocked from merging.
+PRs that introduce breaking changes must carry a `[BREAKING]` label to indicate that they should not be backported to the latest released version. This is a backstop for cases that semver-checks may miss (e.g., behavioral changes, semantic guarantees), and feeds reviewer attention and changelog tooling. Label-flagged PRs targeting `release/*` are blocked from merging.
 
 PRs with breaking changes should also include a migration note in the description.
 
