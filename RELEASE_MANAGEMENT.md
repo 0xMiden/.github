@@ -17,7 +17,7 @@ Fixes flow from `next` to release branches by cherry-pick, not by merge.
 
 1. One release branch per minor version. `release/v0.14` hosts tags `v0.14.0`, `v0.14.1`, etc.
 2. Create the release branch only when the minor version is ready to ship, not in anticipation. Until then, `next` is the development line.
-3. Once a release branch exists, it is equivalent to a release on crates.io. From that point on, only non-breaking changes may merge to it.
+3. Once a release branch exists, only non-breaking changes may merge to it.
 4. Try to keep any new changes non-breaking, if possible, to continue improving the latest released version.
 5. Never merge `next` into a `release/*` branch (or vice versa). Backports from `next` to `release/*` happen by cherry-pick.
 6. All changes land on `next` first, then get backported to `release/*` if they are non-breaking (unless a fix only makes sense on a release branch, e.g., a hotfix touching code that no longer exists on `next`). The backport PR against `release/vX.Y` references the original `next` PR.
@@ -48,14 +48,11 @@ PRs against `next` that introduce breaking changes must carry a `[BREAKING]` lab
 
 1. Land the fix on `next` first via a normal PR.
 2. Open a backport PR against `release/vX.Y`, cherry-picking the commit(s) and adapting as needed. Reference the original `next` PR in the description so it's easy to track which release branches received which fix. CI semver-checks blocks any breaking change.
-3. Hotfix exception. If a fix only makes sense on the release branch, open the PR directly against `release/vX.Y` and note why it isn't going to `next`.
-4. Tag and publish as above.
+3. Tag and publish as above.
 
 ## Documentation
 
-### Versioned Documentation
-
 Documentation is built from:
 
-- `release/vX.Y` branches for versioned/stable docs
-- `next` branch for latest/development docs
+- `release/vX.Y` branches for versioned (stable) documentation
+- `next` branch for latest (development) documentation
