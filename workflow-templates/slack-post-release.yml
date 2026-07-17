@@ -4,7 +4,8 @@ on:
   release:
     types: [published, edited]
 
-permissions: {}
+permissions:
+  copilot-requests: write
 
 jobs:
   notify:
@@ -24,5 +25,4 @@ jobs:
       release_url: ${{ github.event.release.html_url }}
       release_notes: ${{ github.event.release.body }}
     secrets:
-      openai_api_key: ${{ secrets.RELEASE_SUMMARY_OPENAI_API_KEY }}
       slack_bot_token: ${{ secrets.RELEASE_SUMMARY_SLACK_BOT_TOKEN }}

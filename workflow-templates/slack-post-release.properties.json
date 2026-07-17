@@ -1,5 +1,5 @@
 {
   "name": "Slack post release",
-  "description": "Summarize release notes with OpenAI and post them to Slack through the shared 0xMiden workflow.",
+  "description": "Summarize release notes with GitHub Copilot and post them to Slack through the shared 0xMiden workflow.",
   "iconName": "octicon megaphone"
 }
