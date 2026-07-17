@@ -2,6 +2,7 @@
 #
 # Caller responsibilities:
 # - Trigger the caller workflow on `release` with `types: [published]`.
+# - Grant `models: read`.
 # - Pass release title, URL, and release notes as inputs.
 # - Pass `slack_webhook_url` from an organization or repository secret.
 
@@ -23,6 +24,11 @@ on:
         description: "Release URL"
         required: true
         type: string
+      model:
+        description: "GitHub Models model used to summarize the release notes"
+        required: false
+        type: string
+        default: "openai/gpt-4o"
 
     secrets:
       slack_webhook_url:
@@ -36,7 +42,8 @@ jobs:
     name: Notify Slack
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    permissions: {}
+    permissions:
+      models: read
 
     steps:
       - name: Validate inputs
@@ -44,6 +51,7 @@ jobs:
         env:
           RELEASE_TITLE: ${{ inputs.title }}
           RELEASE_URL: ${{ inputs.release_url }}
+          MODEL: ${{ inputs.model }}
           SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
         run: |
           set -euo pipefail
@@ -60,6 +68,7 @@ jobs:
 
           require_non_empty "title" "$RELEASE_TITLE"
           require_non_empty "release_url" "$RELEASE_URL"
+          require_non_empty "model" "$MODEL"
           require_non_empty "slack_webhook_url" "$SLACK_WEBHOOK_URL"
 
           if [[ ! "$RELEASE_URL" =~ ^https://github\.com/[^[:space:]]+$ ]]; then
@@ -75,11 +84,55 @@ jobs:
       - name: Summarize release notes
         id: summarize
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+          MODEL: ${{ inputs.model }}
         run: |
+          set -euo pipefail
+
+          if [ -z "$RELEASE_NOTES" ]; then
+            summary="Release notes were not provided."
+          else
+            response="$(
+              jq -n \
+                --arg model "$MODEL" \
+                --arg notes "$RELEASE_NOTES" \
+                '{
+                  model: $model,
+                  temperature: 0.2,
+                  messages: [
+                    {
+                      role: "system",
+                      content: "Summarize release notes for a Slack release announcement. Return one short paragraph of at most 80 words. Do not use bullet points, headings, markdown tables, or hype."
+                    },
+                    {
+                      role: "user",
+                      content: $notes
+                    }
+                  ]
+                }' |
+              curl --fail-with-body --silent --show-error \
+                --request POST \
+                --header "Content-Type: application/json" \
+                --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+                --header "X-GitHub-Api-Version: 2022-11-28" \
+                --data-binary @- \
+                "https://models.github.ai/inference/chat/completions"
+            )"
+
+            summary="$(jq -r '.choices[0].message.content // ""' <<< "$response")"
+            if [ -z "$summary" ]; then
+              echo "::error::GitHub Models response did not include a summary."
+              exit 1
+            fi
+          fi
+
+          delimiter="SUMMARY_${RANDOM}_${RANDOM}"
           {
-            echo "summary<<EOF"
-            echo ""
-            echo "EOF"
+            echo "summary<<${delimiter}"
+            echo "$summary"
+            echo "${delimiter}"
           } >> "$GITHUB_OUTPUT"
 
       # Slack message format:
