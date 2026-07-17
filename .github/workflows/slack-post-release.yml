@@ -2,7 +2,7 @@
 #
 # Caller responsibilities:
 # - Trigger the caller workflow on `release` with `types: [published]`.
-# - Pass release metadata and release notes as inputs.
+# - Pass release title, URL, and release notes as inputs.
 # - Pass `slack_webhook_url` from an organization or repository secret.
 
 name: Slack post release
@@ -10,12 +10,8 @@ name: Slack post release
 on:
   workflow_call:
     inputs:
-      repository:
-        description: "Repository that published the release, in owner/name form"
-        required: true
-        type: string
-      tag:
-        description: "Release tag"
+      title:
+        description: "Slack message title"
         required: true
         type: string
       release_notes:
@@ -23,21 +19,10 @@ on:
         required: false
         type: string
         default: ""
-      release_name:
-        description: "Release title"
-        required: false
-        type: string
-        default: ""
       release_url:
         description: "Release URL"
-        required: false
+        required: true
         type: string
-        default: ""
-      published_at:
-        description: "Release publication timestamp"
-        required: false
-        type: string
-        default: ""
 
     secrets:
       slack_webhook_url:
@@ -59,25 +44,68 @@ jobs:
         run: |
           :
 
-      - name: Resolve release URL
-        shell: bash
-        run: |
-          :
-
-      - name: Prepare release notes
-        shell: bash
-        run: |
-          :
-
       - name: Summarize release notes
+        id: summarize
         shell: bash
         run: |
-          :
+          {
+            echo "summary<<EOF"
+            echo ""
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
+      # Slack message format:
+      # 
+      # [title](release_url)
+      #
+      # summary
       - name: Build Slack payload
+        id: build_payload
         shell: bash
+        env:
+          RELEASE_TITLE: ${{ inputs.title }}
+          RELEASE_URL: ${{ inputs.release_url }}
+          RELEASE_SUMMARY: ${{ steps.summarize.outputs.summary }}
         run: |
-          :
+          set -euo pipefail
+
+          payload_path="${RUNNER_TEMP:-/tmp}/slack-post-release-payload.json"
+          mkdir -p "$(dirname "$payload_path")"
+
+          jq -n \
+            --arg title "$RELEASE_TITLE" \
+            --arg release_url "$RELEASE_URL" \
+            --arg summary "$RELEASE_SUMMARY" \
+            '
+              def esc: gsub("&"; "&amp;") | gsub("<"; "&lt;") | gsub(">"; "&gt;");
+              def trim: gsub("^[[:space:]]+|[[:space:]]+$"; "");
+              def truncate($n): if length > $n then .[0:($n - 3)] + "..." else . end;
+
+              ($summary | trim) as $clean_summary |
+              {
+                text: "\($title): \(if $clean_summary == "" then "Summary not available yet" else $clean_summary end)",
+                unfurl_links: false,
+                unfurl_media: false,
+                blocks: [
+                  {
+                    type: "section",
+                    text: {
+                      type: "mrkdwn",
+                      text: "*<\($release_url)|\($title | esc)>*"
+                    }
+                  },
+                  {
+                    type: "section",
+                    text: {
+                      type: "mrkdwn",
+                      text: (if $clean_summary == "" then "Summary not available yet" else ($clean_summary | esc) end | truncate(1800))
+                    }
+                  }
+                ]
+              }
+            ' > "$payload_path"
+
+          echo "payload_path=$payload_path" >> "$GITHUB_OUTPUT"
 
       - name: Post Slack notification
         shell: bash

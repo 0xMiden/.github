@@ -10,11 +10,8 @@ jobs:
   notify:
     uses: 0xMiden/.github/.github/workflows/slack-post-release.yml@main
     with:
-      repository: ${{ github.repository }}
-      tag: ${{ github.event.release.tag_name }}
-      release_name: ${{ github.event.release.name }}
+      title: ${{ format('{0} {1}', github.event.repository.name, github.event.release.tag_name) }}
       release_url: ${{ github.event.release.html_url }}
-      published_at: ${{ github.event.release.published_at }}
       release_notes: ${{ github.event.release.body }}
     secrets:
       slack_webhook_url: ${{ secrets.RELEASE_SUMMARY_SLACK_WEBHOOK_URL }}
