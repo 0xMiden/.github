@@ -109,8 +109,36 @@ jobs:
 
       - name: Post Slack notification
         shell: bash
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
+          SLACK_PAYLOAD_PATH: ${{ steps.build_payload.outputs.payload_path }}
         run: |
-          :
+          set -euo pipefail
+
+          if [ -z "$SLACK_PAYLOAD_PATH" ]; then
+            echo "::error::Slack payload path was not provided."
+            exit 1
+          fi
+
+          if [ ! -f "$SLACK_PAYLOAD_PATH" ]; then
+            echo "::error::Slack payload file does not exist: $SLACK_PAYLOAD_PATH"
+            exit 1
+          fi
+
+          response_file="${RUNNER_TEMP:-/tmp}/slack-post-release-response.txt"
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data-binary "@${SLACK_PAYLOAD_PATH}" \
+            --output "$response_file" \
+            "$SLACK_WEBHOOK_URL"
+
+          if [ "$(tr -d '\r\n' < "$response_file")" != "ok" ]; then
+            echo "::error::Slack webhook returned an unexpected response:"
+            cat "$response_file"
+            exit 1
+          fi
 
       - name: Write workflow summary
         shell: bash
