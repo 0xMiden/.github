@@ -358,6 +358,45 @@ jobs:
 
           echo "message_ts=$(jq -r '.ts' <<< "$post_response")" >> "$GITHUB_OUTPUT"
 
+      - name: Broadcast release update
+        id: broadcast_release_update
+        if: ${{ steps.update_slack_notification.outputs.message_ts != '' }}
+        shell: bash
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
+          SLACK_CHANNEL_ID: ${{ vars.RELEASE_SUMMARY_SLACK_CHANNEL_ID }}
+          SLACK_MESSAGE_TS: ${{ steps.update_slack_notification.outputs.message_ts }}
+        run: |
+          set -euo pipefail
+
+          broadcast_payload="${RUNNER_TEMP:-/tmp}/slack-post-release-broadcast.json"
+          jq -n \
+            --arg channel "$SLACK_CHANNEL_ID" \
+            --arg thread_ts "$SLACK_MESSAGE_TS" \
+            '{
+              channel: $channel,
+              thread_ts: $thread_ts,
+              reply_broadcast: true,
+              text: "Release notes updated."
+            }' \
+            > "$broadcast_payload"
+
+          broadcast_response="$(
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+              --header "Content-Type: application/json; charset=utf-8" \
+              --data-binary "@${broadcast_payload}" \
+              "https://slack.com/api/chat.postMessage"
+          )"
+
+          if [ "$(jq -r '.ok // false' <<< "$broadcast_response")" != "true" ]; then
+            echo "::error::Slack update broadcast failed: $(jq -r '.error // "unknown_error"' <<< "$broadcast_response")"
+            exit 1
+          fi
+
+          echo "message_ts=$(jq -r '.ts' <<< "$broadcast_response")" >> "$GITHUB_OUTPUT"
+
       - name: Write workflow summary
         shell: bash
         env:
@@ -367,6 +406,7 @@ jobs:
           SLACK_PAYLOAD_PATH: ${{ steps.build_payload.outputs.payload_path }}
           SLACK_OPERATION: ${{ steps.find_slack_notification.outputs.message_ts != '' && 'updated' || 'posted' }}
           SLACK_MESSAGE_TS: ${{ steps.update_slack_notification.outputs.message_ts || steps.post_slack_notification.outputs.message_ts }}
+          SLACK_BROADCAST_TS: ${{ steps.broadcast_release_update.outputs.message_ts }}
         run: |
           set -euo pipefail
 
@@ -380,6 +420,9 @@ jobs:
             echo "- Title: [${RELEASE_TITLE}](${RELEASE_URL})"
             echo "- Slack action: ${SLACK_OPERATION:-unknown}"
             echo "- Slack message ts: \`${SLACK_MESSAGE_TS:-not available}\`"
+            if [ -n "$SLACK_BROADCAST_TS" ]; then
+              echo "- Slack broadcast ts: \`${SLACK_BROADCAST_TS}\`"
+            fi
             echo "- Payload: \`${SLACK_PAYLOAD_PATH:-not available}\`"
             if [ -n "$RELEASE_SUMMARY" ]; then
               echo
