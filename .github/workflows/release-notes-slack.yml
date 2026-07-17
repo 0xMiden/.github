@@ -1,0 +1,90 @@
+# Sends release notes to Slack.
+#
+# Caller responsibilities:
+# - Trigger the caller workflow on `release` with `types: [published]`.
+# - Pass release metadata and release notes as inputs.
+# - Pass `slack_webhook_url` from an organization or repository secret.
+
+name: Release notes Slack notification
+
+on:
+  workflow_call:
+    inputs:
+      repository:
+        description: "Repository that published the release, in owner/name form"
+        required: true
+        type: string
+      tag:
+        description: "Release tag"
+        required: true
+        type: string
+      release_notes:
+        description: "Release notes text to post or summarize"
+        required: false
+        type: string
+        default: ""
+      release_name:
+        description: "Release title"
+        required: false
+        type: string
+        default: ""
+      release_url:
+        description: "Release URL"
+        required: false
+        type: string
+        default: ""
+      published_at:
+        description: "Release publication timestamp"
+        required: false
+        type: string
+        default: ""
+
+    secrets:
+      slack_webhook_url:
+        description: "Slack incoming webhook URL"
+        required: true
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          :
+
+      - name: Resolve release URL
+        shell: bash
+        run: |
+          :
+
+      - name: Prepare release notes
+        shell: bash
+        run: |
+          :
+
+      - name: Summarize release notes
+        shell: bash
+        run: |
+          :
+
+      - name: Build Slack payload
+        shell: bash
+        run: |
+          :
+
+      - name: Post Slack notification
+        shell: bash
+        run: |
+          :
+
+      - name: Write workflow summary
+        shell: bash
+        run: |
+          :

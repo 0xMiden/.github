@@ -1,0 +1,5 @@
+{
+  "name": "Release Slack notification",
+  "description": "Post release notes through the shared 0xMiden Slack workflow.",
+  "iconName": "octicon megaphone"
+}

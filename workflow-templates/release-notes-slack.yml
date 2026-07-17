@@ -1,0 +1,20 @@
+name: Release Slack notification
+
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  notify:
+    uses: 0xMiden/.github/.github/workflows/release-notes-slack.yml@main
+    with:
+      repository: ${{ github.repository }}
+      tag: ${{ github.event.release.tag_name }}
+      release_name: ${{ github.event.release.name }}
+      release_url: ${{ github.event.release.html_url }}
+      published_at: ${{ github.event.release.published_at }}
+      release_notes: ${{ github.event.release.body }}
+    secrets:
+      slack_webhook_url: ${{ secrets.RELEASE_SUMMARY_SLACK_WEBHOOK_URL }}
