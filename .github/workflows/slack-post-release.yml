@@ -191,6 +191,38 @@ jobs:
 
           echo "payload_path=$payload_path" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve Slack bot identity
+        id: slack_identity
+        shell: bash
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
+        run: |
+          set -euo pipefail
+
+          auth_response="$(
+            curl --fail-with-body --silent --show-error \
+              --request POST \
+              --header "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+              --header "Content-Type: application/json; charset=utf-8" \
+              --data-binary "{}" \
+              "https://slack.com/api/auth.test"
+          )"
+
+          if [ "$(jq -r '.ok // false' <<< "$auth_response")" != "true" ]; then
+            echo "::error::Slack auth.test failed: $(jq -r '.error // "unknown_error"' <<< "$auth_response")"
+            exit 1
+          fi
+
+          bot_user_id="$(jq -r '.user_id // ""' <<< "$auth_response")"
+          bot_id="$(jq -r '.bot_id // ""' <<< "$auth_response")"
+          if [ -z "$bot_user_id" ] && [ -z "$bot_id" ]; then
+            echo "::error::Slack auth.test did not return user_id or bot_id."
+            exit 1
+          fi
+
+          echo "bot_user_id=$bot_user_id" >> "$GITHUB_OUTPUT"
+          echo "bot_id=$bot_id" >> "$GITHUB_OUTPUT"
+
       - name: Find existing Slack notification
         id: find_slack_notification
         shell: bash
@@ -198,6 +230,8 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.slack_bot_token }}
           SLACK_CHANNEL_ID: ${{ vars.RELEASE_SUMMARY_SLACK_CHANNEL_ID }}
           RELEASE_URL: ${{ inputs.release_url }}
+          SLACK_BOT_USER_ID: ${{ steps.slack_identity.outputs.bot_user_id }}
+          SLACK_BOT_ID: ${{ steps.slack_identity.outputs.bot_id }}
         run: |
           set -euo pipefail
 
@@ -222,8 +256,16 @@ jobs:
           fi
 
           existing_ts="$(
-            jq -r --arg release_url "$RELEASE_URL" '
+            jq -r \
+              --arg release_url "$RELEASE_URL" \
+              --arg bot_user_id "$SLACK_BOT_USER_ID" \
+              --arg bot_id "$SLACK_BOT_ID" \
+              '
               .messages[]?
+              | select(
+                  (($bot_user_id != "" and .user == $bot_user_id) or
+                   ($bot_id != "" and .bot_id == $bot_id))
+                )
               | select([.. | strings] | any(contains($release_url)))
               | .ts
             ' <<< "$history_response" | head -n 1
