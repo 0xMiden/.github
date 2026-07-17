@@ -142,5 +142,29 @@ jobs:
 
       - name: Write workflow summary
         shell: bash
+        env:
+          RELEASE_TITLE: ${{ inputs.title }}
+          RELEASE_URL: ${{ inputs.release_url }}
+          RELEASE_SUMMARY: ${{ steps.summarize.outputs.summary }}
+          SLACK_PAYLOAD_PATH: ${{ steps.build_payload.outputs.payload_path }}
         run: |
-          :
+          set -euo pipefail
+
+          if [ -z "${GITHUB_STEP_SUMMARY:-}" ]; then
+            exit 0
+          fi
+
+          {
+            echo "## Slack Post Release"
+            echo
+            echo "- Title: [${RELEASE_TITLE}](${RELEASE_URL})"
+            echo "- Payload: \`${SLACK_PAYLOAD_PATH:-not available}\`"
+            if [ -n "$RELEASE_SUMMARY" ]; then
+              echo
+              echo "### Summary"
+              echo
+              echo "$RELEASE_SUMMARY"
+            else
+              echo "- Summary: empty"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
