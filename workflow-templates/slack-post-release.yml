@@ -1,0 +1,28 @@
+name: Slack post release
+
+on:
+  release:
+    types: [published, edited]
+
+permissions:
+  copilot-requests: write
+
+jobs:
+  notify:
+    if: >-
+      ${{
+        (
+          github.event.action == 'published' ||
+          (
+            github.event.action == 'edited' &&
+            contains(toJSON(github.event.changes), '"body"')
+          )
+        )
+      }}
+    uses: 0xMiden/.github/.github/workflows/slack-post-release.yml@main
+    with:
+      title: ${{ format('{0} {1}', github.event.repository.name, github.event.release.tag_name) }}
+      release_url: ${{ github.event.release.html_url }}
+      release_notes: ${{ github.event.release.body }}
+    secrets:
+      slack_bot_token: ${{ secrets.RELEASE_SUMMARY_SLACK_BOT_TOKEN }}
