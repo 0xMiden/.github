@@ -41,8 +41,36 @@ jobs:
     steps:
       - name: Validate inputs
         shell: bash
+        env:
+          RELEASE_TITLE: ${{ inputs.title }}
+          RELEASE_URL: ${{ inputs.release_url }}
+          SLACK_WEBHOOK_URL: ${{ secrets.slack_webhook_url }}
         run: |
-          :
+          set -euo pipefail
+
+          require_non_empty() {
+            local name="$1"
+            local value="$2"
+
+            if [ -z "$value" ]; then
+              echo "::error::$name is required."
+              exit 1
+            fi
+          }
+
+          require_non_empty "title" "$RELEASE_TITLE"
+          require_non_empty "release_url" "$RELEASE_URL"
+          require_non_empty "slack_webhook_url" "$SLACK_WEBHOOK_URL"
+
+          if [[ ! "$RELEASE_URL" =~ ^https://github\.com/[^[:space:]]+$ ]]; then
+            echo "::error::release_url must be an https://github.com URL."
+            exit 1
+          fi
+
+          if [[ ! "$SLACK_WEBHOOK_URL" =~ ^https://hooks\.slack\.com/services/[^[:space:]]+$ ]]; then
+            echo "::error::slack_webhook_url must be a Slack incoming webhook URL."
+            exit 1
+          fi
 
       - name: Summarize release notes
         id: summarize
