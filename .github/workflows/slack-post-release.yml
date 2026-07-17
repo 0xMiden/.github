@@ -1,11 +1,11 @@
-# Sends release notes to Slack.
+# Posts release notes to Slack.
 #
 # Caller responsibilities:
 # - Trigger the caller workflow on `release` with `types: [published]`.
 # - Pass release metadata and release notes as inputs.
 # - Pass `slack_webhook_url` from an organization or repository secret.
 
-name: Release notes Slack notification
+name: Slack post release
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Release Slack notification
+name: Slack post release
 
 on:
   release:
@@ -8,7 +8,7 @@ permissions: {}
 
 jobs:
   notify:
-    uses: 0xMiden/.github/.github/workflows/release-notes-slack.yml@main
+    uses: 0xMiden/.github/.github/workflows/slack-post-release.yml@main
     with:
       repository: ${{ github.repository }}
       tag: ${{ github.event.release.tag_name }}
